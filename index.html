@@ -5,6 +5,142 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/style.css">
     <title>No olvidar hacer!!! </title>
+
+    <style>
+        *{
+    margin: 0;
+    padding: 0;
+    font-family: 'Poppins', sans-serif;
+    box-sizing: border-box;
+}
+
+.container{
+    width: 100%;
+    min-height: 100vh;
+    background:linear-gradient(135deg, #153677, #4e085f ) ;
+    padding: 10px;
+}
+
+.todo-app{
+
+    width: 100%;
+    max-width: 540px;
+    background:#fff ;
+    margin: 100px auto 20px;
+    padding:40px 30px 70px ;
+    border-radius: 10px;
+}
+
+
+.todo-app h2{
+    color: #002765;
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.todo-app h2 img{
+    width: 30px;
+    margin-left: 10px;
+}
+
+.row{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #edeef0;
+    border-radius:30px ;
+    padding-left: 20px;
+    margin-bottom: 25px;
+
+}
+
+input{
+
+    flex: 1;
+    border:none ;
+    outline: none;
+    background: transparent;
+    padding: 10px;
+    font-weight: 14px;
+}
+
+button{
+    border:none ;
+    outline: none;
+    padding: 16px 50px;
+    background:#ff5945 ;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 40px;
+
+}
+
+ul li {
+    list-style: none;
+    font-size: 17px;
+    padding: 12px 8px 12px 50px;
+    user-select: none;
+    cursor: pointer;
+    position: relative;
+}
+
+
+ul li::before{
+    content:  '';
+    position: absolute;
+    height: 28px;
+    width: 28px;
+    border-radius: 50%;
+    background-image: url(images/unchecked.png);
+    background-size: cover;
+    background-position: center;
+    top: 12px;
+    left: 8px;
+
+}
+
+ul li.checked{
+    color: #555;
+    text-decoration: line-through;
+
+}
+
+ul li.checked::before{
+    background-image: url(images/checked.png);
+}
+
+ul li span{
+
+    position: absolute;
+    right: 0;
+    top: 5px;
+    width: 40px;
+    height: 40px;
+    font-size: 22px;
+    color:#555;
+    line-height: 40px;
+    text-align: center;
+    border-radius: 50%;
+
+}
+
+ul li span:hover{
+
+    background: #edeef0;
+}
+
+li.dragging {
+    opacity: 0.5;
+  }
+  
+  li.drag-over {
+    border: 2px dashed #aaa;
+  }
+  
+
+    </style>
 </head>
 <body>
      <div class="container">
@@ -25,6 +161,109 @@
         
      </div>
      
-     <script src="script.js"></script>
+     <script src="script.js">
+
+        const inputBox = document.getElementById("input-box");
+const listContainer = document.getElementById("list-container");
+
+inputBox.addEventListener("keydown", function(event) {
+    if (event.key === "Enter") {
+        addTask();
+    }
+});
+
+
+function addTask() {
+    if (inputBox.value === '') {
+        alert("Debes escribir algo");
+    } else {
+        let li = document.createElement("li");
+        li.innerHTML = inputBox.value;
+        li.setAttribute("draggable", "true"); // Hacer draggable
+        li.classList.add("draggable"); 
+
+        listContainer.appendChild(li);
+
+        let span = document.createElement("span");
+        span.innerHTML = "\u00d7";
+        li.appendChild(span);
+
+        addDnDHandlers(li); 
+    }
+    inputBox.value = "";
+    saveData();
+}
+
+listContainer.addEventListener("click", function (e) {
+    if (e.target.tagName === "LI") {
+        e.target.classList.toggle("checked");
+        saveData();
+    } else if (e.target.tagName === "SPAN") {
+        e.target.parentElement.remove();
+        saveData();
+    }
+}, false);
+
+function saveData() {
+    localStorage.setItem("data", listContainer.innerHTML);
+}
+
+function showTask() {
+    listContainer.innerHTML = localStorage.getItem("data");
+
+    // Reaplicar drag & drop a elementos recuperados
+    const items = listContainer.querySelectorAll("li");
+    items.forEach(item => {
+        item.setAttribute("draggable", "true");
+        addDnDHandlers(item);
+    });
+}
+showTask();
+
+// Drag and Drop
+function addDnDHandlers(item) {
+    item.addEventListener("dragstart", function (e) {
+        draggedItem = this;
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/html", this.outerHTML);
+        this.classList.add("dragging");
+    });
+
+    item.addEventListener("dragend", function () {
+        this.classList.remove("dragging");
+        draggedItem = null;
+        saveData(); // Guardar nueva posición
+    });
+
+    item.addEventListener("dragover", function (e) {
+        e.preventDefault();
+        this.classList.add("drag-over");
+    });
+
+    item.addEventListener("dragleave", function () {
+        this.classList.remove("drag-over");
+    });
+
+    item.addEventListener("drop", function (e) {
+        e.preventDefault();
+        this.classList.remove("drag-over");
+
+        if (draggedItem !== this) {
+            // Insertar el ítem antes o después según posición
+            const bounding = this.getBoundingClientRect();
+            const offset = e.clientY - bounding.top;
+
+            if (offset > bounding.height / 2) {
+                this.after(draggedItem);
+            } else {
+                this.before(draggedItem);
+            }
+
+            saveData(); // Guardar nueva estructura
+        }
+    });
+}
+
+     </script>
 </body>
 </html>
